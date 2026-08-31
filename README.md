@@ -1,78 +1,95 @@
-# CSV to FHIR Resource Mapper
+# FHIR Patient & Laboratory Data Integration
 
-This project reads a CSV of patient/lab data, maps the rows to FHIR resources (Patient and Observation), and writes those resources to a FHIR server.
+A .NET application that reads patient and laboratory data from a CSV file, maps the data to **HL7 FHIR Patient and Observation resources**, and sends them to a FHIR server using the Firely .NET SDK.
 
-Key features
-- Reads a CSV file containing patient and laboratory values.
-- Maps CSV rows to FHIR Patient and Observation resources using small mapper classes.
-- Uses an Hl7.Fhir REST client to create Patient and Observation resources on a configured FHIR server.
-- Basic logging and error handling during resource creation.
+## Features
 
-Project structure (important files)
-- Program.cs
-  - Configures dependency injection and starts the small processing flow. The CSV file path is taken from configuration (DataSettings:CsvFilePath) and then IntegrationService.MapResources is invoked.
+* Reads patient and laboratory data from CSV.
+* Maps CSV records to FHIR `Patient` and `Observation` resources.
+* Uses the Firely FHIR REST client to communicate with a FHIR server.
+* Supports bearer-token authentication.
+* Uses dependency injection and configuration-based settings.
+* Logs resource creation and errors.
 
-- FHIRClientFactory.cs
-  - Creates and configures an Hl7.Fhir.Rest.FhirClient using configuration keys Fhir:BaseUrl and Fhir:BearerToken.
+## Project Structure
 
-- FHIRDataService/DataService.cs
-  - Responsible for persisting mapped resources to the FHIR server. For each Patient it:
-	1) Creates the Patient on the FHIR server.
-	2) Finds any Observation objects that referenced the original Patient id and rebinds them to the created patient's id.
-	3) Creates each Observation on the FHIR server.
-	4) Fetches the patient record bundle for verification/logging.
+* `Program.cs` — Configures dependency injection and starts the processing flow.
+* `FHIRClientFactory.cs` — Creates and configures the Firely `FhirClient`.
+* `FHIRDataService/DataService.cs` — Persists Patient and Observation resources to the FHIR server.
+* `Processors/IntegrationService.cs` — Reads the CSV and coordinates resource mapping and persistence.
+* `ResourceMappers/PatientMapper.cs` — Maps CSV data to FHIR `Patient` resources.
+* `ResourceMappers/ObservationMapper.cs` — Maps CSV data to FHIR `Observation` resources.
+* `Models/Models.cs` — Contains the `CSVModel` representing the expected CSV data.
 
-- Processors/IntegrationService.cs
-  - Reads the CSV (CsvHelper), maps rows to domain model CSVModel, creates FHIR resources using the mappers, and calls DataService to store them.
+## Configuration
 
-- ResourceMappers/PatientMapper.cs
-- ResourceMappers/ObservationMapper.cs
-  - Map CSVModel instances to Hl7.Fhir.Model.Patient and Hl7.Fhir.Model.Observation respectively.
+The application uses standard .NET configuration sources.
 
-- Models/Models.cs
-  - Contains CSVModel which defines the CSV columns expected (SEQN, TIMESTAMP, PATIENT_ID, PATIENT_FAMILYNAME, PATIENT_GIVENNAME, PATIENT_GENDER, WBC, RBC, HB).
+Important configuration values:
 
-Configuration
-- The app expects configuration values in the standard .NET configuration sources (appsettings.json / environment variables). The important keys are:
-  - Fhir:BaseUrl - base URL of your FHIR server (e.g. https://fhir.example.org)
-  - Fhir:BearerToken - bearer token for authentication (if required by your FHIR server)
-  - DataSettings:CsvFilePath - full path to the CSV file to process
+* `Fhir:BaseUrl` — Base URL of the FHIR server.
+* `Fhir:BearerToken` — Bearer token for authentication, if required.
+* `DataSettings:CsvFilePath` — Path to the CSV file.
 
-Example appsettings.json snippet
+Example:
 
 ```json
 {
   "Fhir": {
-	"BaseUrl": "https://fhir.example.org",
-	"BearerToken": "<token>"
+    "BaseUrl": "https://fhir.example.org",
+    "BearerToken": "<token>"
   },
   "DataSettings": {
-	"CsvFilePath": "C:/data/patients.csv"
+    "CsvFilePath": "C:/data/patients.csv"
   }
 }
 ```
 
-CSV format
-- The CSV should map to the CSVModel properties. Minimal required columns: SEQN, PATIENT_ID, PATIENT_FAMILYNAME, PATIENT_GIVENNAME. TIMESTAMP should be parseable by FhirDateTime.
+Sensitive configuration such as bearer tokens should not be committed to source control. Use environment variables or your deployment platform's secret management for production.
 
-Running the project
-- This is a minimal console/web-hosted app. From the project directory:
+## CSV Format
 
-- dotnet run
+The CSV should contain patient and laboratory data with columns such as:
 
-Behavior notes and caveats
-- The code currently parses numeric observation values with decimal.Parse; malformed or empty values will throw — consider using TryParse or defensive checks.
-- Observations are created after the Patient is created; the mapper initially sets Subject to Patient/{PATIENT_ID} and DataService rebases that to the created resource id.
-- Duplicate patient rows are de-duplicated in memory using the Patient.Id value before sending to the FHIR server.
-- Basic exception handling logs FhirOperationException and general Exception when creating resources.
+```text
+SEQN
+TIMESTAMP
+PATIENT_ID
+PATIENT_FAMILYNAME
+PATIENT_GIVENNAME
+PATIENT_GENDER
+WBC
+RBC
+HB
+```
 
-Dependencies
-- Hl7.Fhir.* packages (for FHIR model and REST client)
-- CsvHelper (for CSV parsing)
+## FHIR Resources
 
-Improvements being worked on
-- Add robust validation for CSV values and better error reporting per-row.
-- Handle partial failures (e.g., continue processing other patients when one patient fails) with configurable retry/backoff.
-- Support bulk transactions / bundled creates to reduce HTTP calls to the FHIR server.
+The application creates:
 
+* **Patient** resources from patient information.
+* **Observation** resources from laboratory values.
 
+Observations are linked to their corresponding Patient resources.
+
+## Running the Project
+
+From the project directory:
+
+```bash
+dotnet run
+```
+
+Ensure the FHIR server configuration and CSV file path are configured before running.
+
+## Dependencies
+
+* Firely .NET SDK
+* CsvHelper
+
+## Future Improvements
+
+* Improved CSV validation and error handling.
+* Retry handling for failed FHIR requests.
+* Partial-failure handling.
+* Support for FHIR transaction/batch operations to reduce HTTP requests.
