@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# User-specified ignores requested by repository owner
+.gitattributes
+.gitignore
+CDC.Nutrition.slnx
+appsettings.Development.json
+appsettings.json
