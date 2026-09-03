@@ -1,4 +1,4 @@
-# FHIR Patient & Laboratory Data Integration
+# FHIR Patient & Laboratory Data ETL App
 
 A .NET application that reads patient and laboratory data from a CSV file, maps the data to **HL7 FHIR Patient and Observation resources**, and sends them to a FHIR server using the Firely .NET SDK.
 
@@ -87,9 +87,10 @@ Ensure the FHIR server configuration and CSV file path are configured before run
 * Firely .NET SDK
 * CsvHelper
 
-## Future Improvements
+## In the making
 
 * Improved CSV validation and error handling.
 * Retry handling for failed FHIR requests.
 * Partial-failure handling.
 * Support for FHIR transaction/batch operations to reduce HTTP requests.
+* Front-end to interact with the data
