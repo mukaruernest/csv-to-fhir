@@ -87,10 +87,4 @@ Ensure the FHIR server configuration and CSV file path are configured before run
 * Firely .NET SDK
 * CsvHelper
 
-## In the making
 
-* Improved CSV validation and error handling.
-* Retry handling for failed FHIR requests.
-* Partial-failure handling.
-* Support for FHIR transaction/batch operations to reduce HTTP requests.
-* Front-end to interact with the data
